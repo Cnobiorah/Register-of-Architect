@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nigeria Register of Architects – Public Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <header class="bg-slate-900 text-white py-4 shadow">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-xl font-semibold">Nigeria Register of Architects</h1>
+      <p class="text-xs sm:text-sm text-slate-300">
+        Public search – Name · Registration number · Qualifications
+      </p>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    <!-- Search panel -->
+    <section class="bg-white rounded-xl shadow p-4 mb-6">
+      <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Search
+          </label>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Type name, registration number, or qualification..."
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-slate-700 focus:outline-none"
+          />
+        </div>
+        <div class="flex gap-2">
+          <button
+            id="searchBtn"
+            class="px-4 py-2 mt-1 sm:mt-0 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+          >
+            Search
+          </button>
+          <button
+            id="resetBtn"
+            class="px-3 py-2 mt-1 sm:mt-0 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+      <p id="status" class="mt-2 text-xs text-slate-500"></p>
+    </section>
+
+    <!-- Results table -->
+    <section class="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <table class="min-w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-slate-100 text-left">
+            <th class="px-3 py-2 border-b text-xs font-semibold text-slate-700">Reg. No.</th>
+            <th class="px-3 py-2 border-b text-xs font-semibold text-slate-700">Name</th>
+            <th class="px-3 py-2 border-b text-xs font-semibold text-slate-700">Qualifications</th>
+            <th class="px-3 py-2 border-b text-xs font-semibold text-slate-700">Phone</th>
+            <th class="px-3 py-2 border-b text-xs font-semibold text-slate-700">Email</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <p id="noResults" class="mt-3 text-xs text-slate-500 hidden">
+        No matching architects found.
+      </p>
+    </section>
+  </main>
+
+  <footer class="mt-8 py-4 text-center text-xs text-slate-500">
+    Data source: ARCON Register (stored in Supabase). MVP public search.
+  </footer>
+
+  <!-- Supabase JS (v2) -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const SUPABASE_URL = "YOUR_SUPABASE_URL_HERE";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const statusEl = document.getElementById("status");
+    const resultsBody = document.getElementById("resultsBody");
+    const noResultsEl = document.getElementById("noResults");
+
+    async function fetchArchitects(searchTerm = "") {
+      statusEl.textContent = "Searching...";
+      noResultsEl.classList.add("hidden");
+      resultsBody.innerHTML = "";
+
+      let query = supabase
+        .from("architects_register")
+        .select("registration_number, name, qualifications, phone, email")
+        .order("registration_number", { ascending: true })
+        .limit(200);
+
+      if (searchTerm.trim() !== "") {
+        const term = "%" + searchTerm.trim() + "%";
+        query = query.or(
+          `name.ilike.${term},registration_number.ilike.${term},qualifications.ilike.${term}`
+        );
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(error);
+        statusEl.textContent = "Error loading data. Check console.";
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        statusEl.textContent = "0 results.";
+        noResultsEl.classList.remove("hidden");
+        return;
+      }
+
+      statusEl.textContent = `Showing ${data.length} architect(s).`;
+
+      for (const row of data) {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50";
+
+        tr.innerHTML = `
+          <td class="px-3 py-2 border-b align-top text-xs font-mono">${row.registration_number || ""}</td>
+          <td class="px-3 py-2 border-b align-top">${row.name || ""}</td>
+          <td class="px-3 py-2 border-b align-top text-xs">${row.qualifications || ""}</td>
+          <td class="px-3 py-2 border-b align-top text-xs">${row.phone || ""}</td>
+          <td class="px-3 py-2 border-b align-top text-xs">
+            ${row.email ? `<a href="mailto:${row.email}" class="text-slate-800 underline">${row.email}</a>` : ""}
+          </td>
+        `;
+        resultsBody.appendChild(tr);
+      }
+    }
+
+    searchBtn.addEventListener("click", () => {
+      fetchArchitects(searchInput.value);
+    });
+
+    searchInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") fetchArchitects(searchInput.value);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      fetchArchitects("");
+    });
+
+    // Initial load
+    fetchArchitects("");
+  </script>
+</body>
+</html>

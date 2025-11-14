@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Architects Register – Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800 py-4">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <h1 class="text-xl font-semibold">Admin Dashboard – Architects Register</h1>
+      <p class="text-xs text-slate-400">
+        Connected to Supabase table: <span class="font-mono">architects_register</span>
+      </p>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-5 flex flex-col lg:flex-row gap-5">
+    <!-- Left: table & search -->
+    <section class="flex-1 bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+      <div class="flex flex-col sm:flex-row gap-3 sm:items-end mb-4">
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Search architects</label>
+          <input
+            id="adminSearchInput"
+            type="text"
+            placeholder="Name, registration number, qualification..."
+            class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:outline-none"
+          />
+        </div>
+        <div class="flex gap-2">
+          <button
+            id="adminSearchBtn"
+            class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-900 hover:bg-white"
+          >
+            Search
+          </button>
+          <button
+            id="adminResetBtn"
+            class="px-3 py-2 text-xs rounded-lg border border-slate-600 hover:bg-slate-800"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+      <p id="adminStatus" class="text-xs text-slate-400 mb-2"></p>
+
+      <div class="overflow-x-auto max-h-[460px] border border-slate-800 rounded-xl">
+        <table class="min-w-full text-xs">
+          <thead class="bg-slate-900 text-slate-300 sticky top-0">
+            <tr>
+              <th class="px-3 py-2 border-b border-slate-800 text-left">Reg. No.</th>
+              <th class="px-3 py-2 border-b border-slate-800 text-left">Name</th>
+              <th class="px-3 py-2 border-b border-slate-800 text-left">Phone</th>
+              <th class="px-3 py-2 border-b border-slate-800 text-left">Email</th>
+              <th class="px-3 py-2 border-b border-slate-800 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody" class="bg-slate-950/70"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Right: detail / edit panel -->
+    <section class="w-full lg:w-96 bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+      <h2 class="text-sm font-semibold mb-3">Edit selected architect</h2>
+      <p id="editHint" class="text-xs text-slate-400 mb-3">
+        Select an architect from the table to view and edit details.
+      </p>
+
+      <form id="editForm" class="space-y-3 hidden">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">ID (DB)</label>
+          <input id="editId" type="text" readonly class="w-full text-xs font-mono rounded bg-slate-800 border border-slate-700 px-2 py-1" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Registration number</label>
+          <input id="editRegNo" type="text" readonly class="w-full text-xs font-mono rounded bg-slate-800 border border-slate-700 px-2 py-1" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Name</label>
+          <input id="editName" type="text" class="w-full text-sm rounded bg-slate-950 border border-slate-700 px-2 py-1 focus:ring-2 focus:ring-slate-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Qualifications</label>
+          <textarea id="editQualifications" rows="3" class="w-full text-xs rounded bg-slate-950 border border-slate-700 px-2 py-1 focus:ring-2 focus:ring-slate-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Phone</label>
+            <input id="editPhone" type="text" class="w-full text-xs rounded bg-slate-950 border border-slate-700 px-2 py-1" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
+            <input id="editEmail" type="email" class="w-full text-xs rounded bg-slate-950 border border-slate-700 px-2 py-1" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Raw entry text (read-only)</label>
+          <textarea id="editRaw" rows="4" readonly class="w-full text-[10px] font-mono rounded bg-slate-900 border border-slate-700 px-2 py-1"></textarea>
+        </div>
+
+        <div class="flex gap-2 mt-4">
+          <button
+            id="saveBtn"
+            type="button"
+            class="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+          >
+            Save changes
+          </button>
+          <button
+            id="deleteBtn"
+            type="button"
+            class="px-3 py-2 text-xs font-semibold rounded-lg bg-red-500/80 text-white hover:bg-red-500"
+          >
+            Delete
+          </button>
+        </div>
+
+        <p id="editStatus" class="mt-2 text-xs text-slate-400"></p>
+      </form>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const SUPABASE_URL = "YOUR_SUPABASE_URL_HERE";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const adminSearchInput = document.getElementById("adminSearchInput");
+    const adminSearchBtn = document.getElementById("adminSearchBtn");
+    const adminResetBtn = document.getElementById("adminResetBtn");
+    const adminStatus = document.getElementById("adminStatus");
+    const adminTableBody = document.getElementById("adminTableBody");
+
+    const editHint = document.getElementById("editHint");
+    const editForm = document.getElementById("editForm");
+    const editId = document.getElementById("editId");
+    const editRegNo = document.getElementById("editRegNo");
+    const editName = document.getElementById("editName");
+    const editQualifications = document.getElementById("editQualifications");
+    const editPhone = document.getElementById("editPhone");
+    const editEmail = document.getElementById("editEmail");
+    const editRaw = document.getElementById("editRaw");
+    const editStatus = document.getElementById("editStatus");
+    const saveBtn = document.getElementById("saveBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+
+    let currentSelection = null;
+
+    async function loadArchitects(term = "") {
+      adminStatus.textContent = "Loading...";
+      adminTableBody.innerHTML = "";
+      currentSelection = null;
+      editForm.classList.add("hidden");
+      editHint.classList.remove("hidden");
+      editStatus.textContent = "";
+
+      let query = supabase
+        .from("architects_register")
+        .select("id, registration_number, name, phone, email, qualifications, entry_text_raw")
+        .order("registration_number", { ascending: true })
+        .limit(200);
+
+      if (term.trim() !== "") {
+        const value = "%" + term.trim() + "%";
+        query = query.or(
+          `name.ilike.${value},registration_number.ilike.${value},qualifications.ilike.${value}`
+        );
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(error);
+        adminStatus.textContent = "Error loading data. See console.";
+        return;
+      }
+
+      adminStatus.textContent = `Loaded ${data.length} record(s). Click a row to edit.`;
+
+      for (const row of data) {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800 cursor-pointer";
+        tr.innerHTML = `
+          <td class="px-3 py-2 border-b border-slate-800 font-mono">${row.registration_number || ""}</td>
+          <td class="px-3 py-2 border-b border-slate-800">${row.name || ""}</td>
+          <td class="px-3 py-2 border-b border-slate-800 text-[11px]">${row.phone || ""}</td>
+          <td class="px-3 py-2 border-b border-slate-800 text-[11px]">${row.email || ""}</td>
+          <td class="px-3 py-2 border-b border-slate-800 text-[11px] text-slate-300">Edit ▸</td>
+        `;
+        tr.addEventListener("click", () => openEditor(row));
+        adminTableBody.appendChild(tr);
+      }
+    }
+
+    function openEditor(row) {
+      currentSelection = row;
+      editId.value = row.id;
+      editRegNo.value = row.registration_number || "";
+      editName.value = row.name || "";
+      editQualifications.value = row.qualifications || "";
+      editPhone.value = row.phone || "";
+      editEmail.value = row.email || "";
+      editRaw.value = row.entry_text_raw || "";
+
+      editForm.classList.remove("hidden");
+      editHint.classList.add("hidden");
+      editStatus.textContent = "";
+    }
+
+    async function saveChanges() {
+      if (!currentSelection) return;
+      editStatus.textContent = "Saving...";
+
+      const updates = {
+        name: editName.value.trim(),
+        qualifications: editQualifications.value.trim(),
+        phone: editPhone.value.trim(),
+        email: editEmail.value.trim()
+      };
+
+      const { error } = await supabase
+        .from("architects_register")
+        .update(updates)
+        .eq("id", currentSelection.id);
+
+      if (error) {
+        console.error(error);
+        editStatus.textContent = "Error saving changes.";
+        return;
+      }
+
+      editStatus.textContent = "Saved successfully.";
+      loadArchitects(adminSearchInput.value);
+    }
+
+    async function deleteRecord() {
+      if (!currentSelection) return;
+      const ok = confirm(
+        `Delete ${currentSelection.registration_number} – ${currentSelection.name}?`
+      );
+      if (!ok) return;
+
+      editStatus.textContent = "Deleting...";
+
+      const { error } = await supabase
+        .from("architects_register")
+        .delete()
+        .eq("id", currentSelection.id);
+
+      if (error) {
+        console.error(error);
+        editStatus.textContent = "Error deleting record.";
+        return;
+      }
+
+      editStatus.textContent = "Deleted.";
+      currentSelection = null;
+      editForm.classList.add("hidden");
+      editHint.classList.remove("hidden");
+      loadArchitects(adminSearchInput.value);
+    }
+
+    adminSearchBtn.addEventListener("click", () => {
+      loadArchitects(adminSearchInput.value);
+    });
+
+    adminResetBtn.addEventListener("click", () => {
+      adminSearchInput.value = "";
+      loadArchitects("");
+    });
+
+    adminSearchInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") loadArchitects(adminSearchInput.value);
+    });
+
+    saveBtn.addEventListener("click", saveChanges);
+    deleteBtn.addEventListener("click", deleteRecord);
+
+    // initial load
+    loadArchitects("");
+  </script>
+</body>
+</html>
