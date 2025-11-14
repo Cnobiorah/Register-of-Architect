@@ -166,10 +166,9 @@
       editStatus.textContent = "";
 
       let query = supabase
-        .from("architects_register")
-        .select("id, registration_number, name, phone, email, qualifications, entry_text_raw")
-        .order("registration_number", { ascending: true })
-        .limit(200);
+  .from("architects_register")
+  .select("id, registration_number, name, phone, email, qualifications, entry_text_raw")
+  .order("registration_number", { ascending: true });
 
       if (term.trim() !== "") {
         const value = "%" + term.trim() + "%";
@@ -292,4 +291,5 @@
   </script>
 </body>
 </html>
+
 
