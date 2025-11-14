@@ -108,13 +108,12 @@
       const term = "%" + termTrimmed + "%";
 
       const { data, error } = await supabase
-        .from("architects_register")
-        .select("registration_number, name, qualifications, phone, email")
-        .or(
-          `name.ilike.${term},registration_number.ilike.${term},qualifications.ilike.${term}`
-        )
-        .order("registration_number", { ascending: true })
-        .limit(200);
+  .from("architects_register")
+  .select("registration_number, name, qualifications, phone, email")
+  .or(
+    `name.ilike.${term},registration_number.ilike.${term},qualifications.ilike.${term}`
+  )
+  .order("registration_number", { ascending: true });
 
       if (error) {
         console.error(error);
@@ -166,4 +165,5 @@
   </script>
 </body>
 </html>
+
 
